@@ -1,0 +1,29 @@
+# IntelliJ / JetBrains
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# Build output
+out/
+target/
+bin/
+
+# Gradle
+.gradle/
+build/
+
+# Maven
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+release.properties
+dependency-reduced-pom.xml
+
+# Logs
+*.log
+
+# OS junk
+.DS_Store
+Thumbs.db
