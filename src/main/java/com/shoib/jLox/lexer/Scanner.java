@@ -1,7 +1,9 @@
 package com.shoib.jLox.lexer;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import com.shoib.jLox.Lox;
 import com.shoib.jLox.lexer.Token.Type;
@@ -10,6 +12,30 @@ import static com.shoib.jLox.lexer.Token.Type.*;
 
 
 public class Scanner {
+
+    private static final Map<String, Type> keywords;
+
+    static {
+        keywords = new HashMap<>();
+        keywords.put("and", AND);
+        keywords.put("class", CLASS);
+        keywords.put("else", ELSE);
+        keywords.put("false", FALSE);
+        keywords.put("for", FOR);
+        keywords.put("fun", FUN);
+        keywords.put("if", IF);
+        keywords.put("nil", NIL);
+        keywords.put("or", OR);
+        keywords.put("print", PRINT);
+        keywords.put("return", RETURN);
+        keywords.put("super", SUPER);
+        keywords.put("this", THIS);
+        keywords.put("true", TRUE);
+        keywords.put("var", VAR);
+        keywords.put("while", WHILE);
+
+    }
+
     private final String source;
     private final List<Token> tokens = new ArrayList<>();
 
@@ -35,9 +61,8 @@ public class Scanner {
     }
 
     private void scanToken() {
-        var nextChar = advance();
-
-        switch (nextChar) {
+        var c = advance();
+        switch (c) {
             case '(' -> addToken(LEFT_PAREN);
             case ')' -> addToken(RIGHT_PAREN);
             case '{' -> addToken(LEFT_BRACE);
@@ -63,7 +88,15 @@ public class Scanner {
             case ' ', '\r', '\t' -> {}
             case '\n' -> line++;
             case '"' -> string();
-            default -> Lox.error(line, "Unexpected Character.");
+            default -> {
+                if (isDigit(c)) {
+                    number();
+                } else if (isAlpha(c)) {
+                    identifier();
+                } else {
+                    Lox.error(line, "Unexpected Character.");
+                }
+            }
         }
     }
 
@@ -98,6 +131,34 @@ public class Scanner {
         return source.charAt(current);
     }
 
+    private boolean isDigit(char c) {
+        return c >= '0' && c <= '9';
+    }
+
+    private char peekNext() {
+        if (current + 1 >= source.length()) return '\0';
+        return source.charAt(current + 1);
+    }
+
+    private void identifier() {
+        while (isAlpaNumeric(peek())) advance();
+
+        String text = source.substring(start, current);
+        Type type = keywords.get(text);
+        if (type == null) type = IDENTIFIER;
+        addToken(type);
+    }
+
+    private boolean isAlpha(char c) {
+        return (c >= 'a' && c <= 'z') ||
+                (c >= 'A' && c <= 'Z') ||
+                c == '_';
+    }
+
+    private boolean isAlpaNumeric(char c) {
+        return isAlpha(c) || isDigit(c);
+    }
+
     private void string() {
         while (peek() != '"' && !isAtEnd()) {
             if (peek() == '\n') line++;
@@ -116,4 +177,19 @@ public class Scanner {
         String value = source.substring(start + 1, current - 1);
         addToken(STRING, value);
     }
+
+    private void number() {
+        while (isDigit(peek())) advance();
+
+        // Look for a fractional part.
+        if (peek() == '.' && isDigit(peekNext())) {
+            // Consume the "."
+            do advance();
+            while (isDigit(peek()));
+        }
+
+        addToken(NUMBER, Double.parseDouble(source.substring(start, current)));
+    }
+
+
 }
